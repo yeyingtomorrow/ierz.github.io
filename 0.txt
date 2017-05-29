@@ -8,6 +8,25 @@ Enter the project folder and add an index.html file:
 ~$cd username.github.io
 ~$echo "Hello World" > index.html
 
+!!!!
+ssh -T git@github.com
+
+change .Git/config
+
+vim .Git/config
+
+修改
+
+[remote "origin"]  
+    url = https://github.com/xxxxx/example.git  
+
+为：
+[remote "origin"]  
+    url = https://xxxxx@github.com/xxxxx/example.git 
+
+
+
+
 3\Push it
 Add, commit, and push your changes:
 
