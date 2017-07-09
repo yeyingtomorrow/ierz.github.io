@@ -1,0 +1,112 @@
+﻿0x00 install sysmon
+
+下载sysmon，解压后，进入sysmon目录
+
+#sysmon 的相关参数定义，参见https://technet.microsoft.com/en-us/sysinternals/dn798348
+sysmon -i -n -accepteula
+
+这里使用-i、-n及-accepteula
+-i install the service
+-n instructs it to monitor network connections
+
+#注意，安装、修改、卸载sysmon 都需要进行reboot
+
+
+0x01  splunk  配置
+
+（1）inputs.conf 配置
+
+%SPLUNK_HOME%\etc\system\local\inputs.conf  进行编辑
+
+添加：
+
+[WinEventLog://Microsoft-Windows-Sysmon/Operational]
+disabled = false
+renderXml = true
+
+（2）props.conf 配置（无该文件就新建一个）
+%SPLUNK_HOME%\etc\system\local\props.conf
+
+添加：
+[XmlWinEventLog:Microsoft-Windows-Sysmon/Operational]
+REPORT-sysmon = sysmon-eventid,sysmon-version,sysmon-level,sysmon-task,sysmon-opcode,sysmon-keywords,sysmon-created,sysmon-record,sysmon-correlation,sysmon-channel,sysmon-computer,sysmon-sid,sysmon-data
+
+（3）transforms.conf配置
+
+%SPLUNK_HOME%\etc\system\local\transforms.conf
+
+添加：
+[sysmon-eventid]
+REGEX = <EventID>(\d+)</EventID>
+FORMAT = EventCode::$1
+
+[sysmon-version]
+REGEX = <Version>(\d+)</Version>
+FORMAT = Version::$1
+
+[sysmon-level]
+REGEX = <Level>(\d+)</Level>
+FORMAT = Level::$1
+
+[sysmon-task]
+REGEX = <Task>(\d+)</Task>
+FORMAT = Task::$1
+
+[sysmon-opcode]
+REGEX = <Opcode>(\d+)</Opcode>
+FORMAT = Opcode::$1
+
+[sysmon-keywords]
+REGEX = <Keywords>(0x[0-9a-fA-F]+)</Keywords>
+FORMAT = Keywords::$1
+
+[sysmon-created]
+REGEX = <TimeCreated SystemTime='(.*?)'/>
+FORMAT = TimeCreated::$1
+
+[sysmon-record]
+REGEX = <EventRecordID>(\d+)</EventRecordID>
+FORMAT = RecordID::$1
+
+[sysmon-correlation]
+REGEX = <Correlation>(.*?)</Correlation>
+FORMAT = Correlation::$1
+
+[sysmon-channel]
+REGEX = <Channel>(.*?)</Channel>
+FORMAT = EventChannel::$1
+
+[sysmon-computer]
+REGEX = <Computer>(.*?)</Computer>
+FORMAT = Computer::$1
+
+[sysmon-sid]
+REGEX = <Security UserID='(S-[0-9a-fA-f-]+)'/>
+FORMAT = SecurityID::$1
+
+[sysmon-data]
+REGEX = <Data Name='(.*?)'>(.*?)</Data>
+FORMAT = $1::$2
+
+
+（4）reboot splunk
+
+0x02  splunk 搜索
+
+相关的sysmon 相关event id 参见https://technet.microsoft.com/en-us/sysinternals/dn798348  Event filtering entries 章节
+
+
+监控outbound 进程
+
+sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=3 Protocol=tcp Initiated=true | eval src=if(isnotnull(SourceHostname), SourceHostname+":"+SourcePort, SourceIp+":"+SourcePort)  | eval dest=if(isnotnull(DestinationHostname), DestinationHostname+":"+DestinationPort, DestinationIp+":"+DestinationPort)  | eval src_dest=src + " => " + dest | stats values(src_dest) as Connection by ProcessGuid ProcessId User Computer Image
+
+监控创建的进程
+
+sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=1 NOT User="NT AUTHORITY\\SYSTEM" | stats values(User) as User,values(CommandLine) as CommandLine,values(ProcessId) as ProcessId,values(ParentProcessId) as ParentProcessId values(ParentCommandLine) as ParentCommandLine by LogonGuid
+
+监控非本地的出站进程
+
+sourcetype="xmlwineventlog:microsoft-windows-sysmon/operational" EventCode=3 Protocol=tcp Initiated=true | where DestinationIp!="127.0.0.1" AND DestinationHostname!=SourceHostname | table _time User Computer ProcessId ProcessGuid DestinationHostname DestinationPort | join type=inner [search sourcetype="xmlwineventlog:microsoft-windows-sysmon/operational" EventCode=1 | table _time ProcessGuid ProcessId CommandLine]
+
+
+ 
