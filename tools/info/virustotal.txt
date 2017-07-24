@@ -1,0 +1,3 @@
+https://www.virustotal.com/en/domain/www.10086.cn/information/
+
+将对应的域名进行替换就可以查看信息了
