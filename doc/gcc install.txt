@@ -1,0 +1,8 @@
+gcc 源码安装过程中发现居然自带依赖包下载安装脚本
+
+编译安装 GCC 需要依赖 mpc，mpfr，gmp包。好在 GCC 源码里自带脚本可以轻松下载依赖包。
+
+tar zxf gcc-4.8.5.tar.gz
+cd gcc-4.8.5
+./contrib/download_prerequisites
+在此脚本里可以看到依赖包的版本号依次是 mpc-0.8.1，mpfr-2.4.2，gmp-4.3.2。
