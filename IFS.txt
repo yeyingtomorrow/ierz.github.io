@@ -1,0 +1,96 @@
+最近在做文件处理的时候发现文件名里面含有空格，导致linux按空格进行分割
+后来查到可以用IFS（the Internal Field Separator）进行处理
+IFS: The Internal Field Separator that is used for word splitting after expansion and to split lines into words with the read built-in command. The default value is “<space><tab><new-line>”.
+
+通过在shell脚本中添加IFS设置
+
+#没设置IFS前
+
+[jimmy@localhost ~]$ vi 1.sh 
+  "1.sh" 9L, 240C#!/bin/bash
+path=/home/jimmy/arachni-1.5.1-0.5.12/bin  #$1,>>shell
+cd $path
+#IFS=$(echo -en "\n\b")
+#echo -en $IFS
+for filename in `ls`
+do
+    echo $filename 
+done
+
+
+
+[jimmy@localhost ~]$ bash 1.sh 
+1
+192.168.0.79
+2017-10-04
+22_02_45
+-0700.afr
+192.168.0.80
+2017-10-04
+21_16_46
+-0700.afr
+arachni
+arachni_console
+arachni_multi
+arachni_reporter
+arachni_reproduce
+arachni_restore
+arachni_rest_server
+arachni_rpc
+arachni_rpcd
+arachni_rpcd_monitor
+arachni_script
+arachni_shell
+arachni_web
+arachni_web_change_password
+arachni_web_create_user
+arachni_web_import
+arachni_web_scan_import
+arachni_web_script
+arachni_web_task
+readlink_f.sh
+[jimmy@localhost ~]$ 
+
+可以看到.afr文件名被空格分隔成为多个文件进行显示
+
+#设置IFS后
+
+
+[jimmy@localhost ~]$ vi 11.sh 
+  "11.sh" 9L, 238C#!/bin/bash
+path=/home/jimmy/arachni-1.5.1-0.5.12/bin  #$1,>>shell
+cd $path
+IFS=$(echo -en "\n\b")
+echo -en $IFS
+for filename in `ls`
+do
+    echo $filename 
+done
+
+
+
+[jimmy@localhost ~]$ bash 11.sh 
+1
+192.168.0.79 2017-10-04 22_02_45 -0700.afr
+192.168.0.80 2017-10-04 21_16_46 -0700.afr
+arachni
+arachni_console
+arachni_multi
+arachni_reporter
+arachni_reproduce
+arachni_restore
+arachni_rest_server
+arachni_rpc
+arachni_rpcd
+arachni_rpcd_monitor
+arachni_script
+arachni_shell
+arachni_web
+arachni_web_change_password
+arachni_web_create_user
+arachni_web_import
+arachni_web_scan_import
+arachni_web_script
+arachni_web_task
+readlink_f.sh
+[jimmy@localhost ~]$ 
